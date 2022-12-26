@@ -1,8 +1,12 @@
 from flask import Flask, request, jsonify
+from backend import backend_search, backend_search_body, backend_search_title, backend_search_anchor, \
+    backend_get_pagerank, backend_get_pageview
+
 
 class MyFlaskApp(Flask):
     def run(self, host=None, port=None, debug=None, **options):
         super(MyFlaskApp, self).run(host=host, port=port, debug=debug, **options)
+
 
 app = MyFlaskApp(__name__)
 app.config['JSONIFY_PRETTYPRINT_REGULAR'] = False
@@ -10,11 +14,11 @@ app.config['JSONIFY_PRETTYPRINT_REGULAR'] = False
 
 @app.route("/search")
 def search():
-    ''' Returns up to a 100 of your best search results for the query. This is 
+    """ Returns up to a 100 of your best search results for the query. This is
         the place to put forward your best search engine, and you are free to
-        implement the retrieval whoever you'd like within the bound of the 
+        implement the retrieval whoever you'd like within the bound of the
         project requirements (efficiency, quality, etc.). That means it is up to
-        you to decide on whether to use stemming, remove stopwords, use 
+        you to decide on whether to use stemming, remove stopwords, use
         PageRank, query expansion, etc.
 
         To issue a query navigate to a URL like:
@@ -23,24 +27,24 @@ def search():
         if you're using ngrok on Colab or your external IP on GCP.
     Returns:
     --------
-        list of up to 100 search results, ordered from best to worst where each 
+        list of up to 100 search results, ordered from best to worst where each
         element is a tuple (wiki_id, title).
-    '''
-    res = []
+    """
     query = request.args.get('query', '')
     if len(query) == 0:
-      return jsonify(res)
-    # BEGIN SOLUTION
+        app.logger.info("The input was empty")
+        return jsonify([])
+    results = (backend_search.get_wiki_tuple_list_of_search_query(query, 100))
+    app.logger.info("The results of the query: " + query + " , the results are: " + str(results))
+    return jsonify(results)
 
-    # END SOLUTION
-    return jsonify(res)
 
 @app.route("/search_body")
 def search_body():
-    ''' Returns up to a 100 search results for the query using TFIDF AND COSINE
-        SIMILARITY OF THE BODY OF ARTICLES ONLY. DO NOT use stemming. DO USE the 
-        staff-provided tokenizer from Assignment 3 (GCP part) to do the 
-        tokenization and remove stopwords. 
+    """ Returns up to a 100 search results for the query using TFIDF AND COSINE
+        SIMILARITY OF THE BODY OF ARTICLES ONLY. DO NOT use stemming. DO USE the
+        staff-provided tokenizer from Assignment 3 (GCP part) to do the
+        tokenization and remove stopwords.
 
         To issue a query navigate to a URL like:
          http://YOUR_SERVER_DOMAIN/search_body?query=hello+world
@@ -48,25 +52,25 @@ def search_body():
         if you're using ngrok on Colab or your external IP on GCP.
     Returns:
     --------
-        list of up to 100 search results, ordered from best to worst where each 
+        list of up to 100 search results, ordered from best to worst where each
         element is a tuple (wiki_id, title).
-    '''
-    res = []
+    """
     query = request.args.get('query', '')
     if len(query) == 0:
-      return jsonify(res)
-    # BEGIN SOLUTION
+        app.logger.info("The input was empty")
+        return jsonify([])
+    results = (backend_search_body.get_wiki_tuple_list_of_search_body_query(query, 100))
+    app.logger.info("The results of the query: " + query + " , the results are: " + str(results))
+    return jsonify(results)
 
-    # END SOLUTION
-    return jsonify(res)
 
 @app.route("/search_title")
 def search_title():
-    ''' Returns ALL (not just top 100) search results that contain A QUERY WORD 
-        IN THE TITLE of articles, ordered in descending order of the NUMBER OF 
-        QUERY WORDS that appear in the title. For example, a document with a 
-        title that matches two of the query words will be ranked before a 
-        document with a title that matches only one query term. 
+    """ Returns ALL (not just top 100) search results that contain A QUERY WORD
+        IN THE TITLE of articles, ordered in descending order of the NUMBER OF
+        QUERY WORDS that appear in the title. For example, a document with a
+        title that matches two of the query words will be ranked before a
+        document with a title that matches only one query term.
 
         Test this by navigating to the a URL like:
          http://YOUR_SERVER_DOMAIN/search_title?query=hello+world
@@ -74,26 +78,26 @@ def search_title():
         if you're using ngrok on Colab or your external IP on GCP.
     Returns:
     --------
-        list of ALL (not just top 100) search results, ordered from best to 
+        list of ALL (not just top 100) search results, ordered from best to
         worst where each element is a tuple (wiki_id, title).
-    '''
-    res = []
+    """
     query = request.args.get('query', '')
     if len(query) == 0:
-      return jsonify(res)
-    # BEGIN SOLUTION
+        app.logger.info("The input was empty")
+        return jsonify([])
+    results = backend_search_title.get_wiki_tuple_list_of_search_title_query(query)
+    app.logger.info("The results of the query: " + query + " , the results are: " + str(results))
+    return jsonify(results)
 
-    # END SOLUTION
-    return jsonify(res)
 
 @app.route("/search_anchor")
 def search_anchor():
-    ''' Returns ALL (not just top 100) search results that contain A QUERY WORD 
-        IN THE ANCHOR TEXT of articles, ordered in descending order of the 
-        NUMBER OF QUERY WORDS that appear in anchor text linking to the page. 
-        For example, a document with a anchor text that matches two of the 
-        query words will be ranked before a document with anchor text that 
-        matches only one query term. 
+    """ Returns ALL (not just top 100) search results that contain A QUERY WORD
+        IN THE ANCHOR TEXT of articles, ordered in descending order of the
+        NUMBER OF QUERY WORDS that appear in anchor text linking to the page.
+        For example, a document with a anchor text that matches two of the
+        query words will be ranked before a document with anchor text that
+        matches only one query term.
 
         Test this by navigating to the a URL like:
          http://YOUR_SERVER_DOMAIN/search_anchor?query=hello+world
@@ -101,22 +105,21 @@ def search_anchor():
         if you're using ngrok on Colab or your external IP on GCP.
     Returns:
     --------
-        list of ALL (not just top 100) search results, ordered from best to 
+        list of ALL (not just top 100) search results, ordered from best to
         worst where each element is a tuple (wiki_id, title).
-    '''
-    res = []
+    """
     query = request.args.get('query', '')
     if len(query) == 0:
-      return jsonify(res)
-    # BEGIN SOLUTION
-    
-    # END SOLUTION
-    return jsonify(res)
+        app.logger.info("The input was empty")
+        return jsonify([])
+    results = backend_search_anchor.get_wiki_tuple_list_of_search_anchor_query(query)
+    app.logger.info("The results of the query: " + query + " , the results are: " + str(results))
+    return jsonify(results)
+
 
 @app.route("/get_pagerank", methods=['POST'])
 def get_pagerank():
-    ''' Returns PageRank values for a list of provided wiki article IDs. 
-
+    """ Returns PageRank values for a list of provided wiki article IDs.
         Test this by issuing a POST request to a URL like:
           http://YOUR_SERVER_DOMAIN/get_pagerank
         with a json payload of the list of article ids. In python do:
@@ -127,20 +130,20 @@ def get_pagerank():
     Returns:
     --------
         list of floats:
-          list of PageRank scores that correrspond to the provided article IDs.
-    '''
-    res = []
+          list of PageRank scores that correspond to the provided article IDs.
+    """
     wiki_ids = request.get_json()
     if len(wiki_ids) == 0:
-      return jsonify(res)
-    # BEGIN SOLUTION
+        app.logger.info("The input was empty")
+        return jsonify([])
+    results = backend_get_pagerank.get_pagerank_of_wiki_pages(wiki_ids)
+    app.logger.info("The results of the wiki_ids: " + str(wiki_ids) + " , the results are: " + str(results))
+    return jsonify(results)
 
-    # END SOLUTION
-    return jsonify(res)
 
 @app.route("/get_pageview", methods=['POST'])
 def get_pageview():
-    ''' Returns the number of page views that each of the provide wiki articles
+    """ Returns the number of page views that each of the provide wiki articles
         had in August 2021.
 
         Test this by issuing a POST request to a URL like:
@@ -153,17 +156,16 @@ def get_pageview():
     Returns:
     --------
         list of ints:
-          list of page view numbers from August 2021 that correrspond to the 
+          list of page view numbers from August 2021 that correspond to the
           provided list article IDs.
-    '''
-    res = []
+    """
     wiki_ids = request.get_json()
     if len(wiki_ids) == 0:
-      return jsonify(res)
-    # BEGIN SOLUTION
-
-    # END SOLUTION
-    return jsonify(res)
+        app.logger.info("The input was empty")
+        return jsonify([])
+    results = backend_get_pageview.get_pagerank_of_wiki_pages(wiki_ids)
+    app.logger.info("The results of the wiki_ids: " + str(wiki_ids) + " , the results are: " + str(results))
+    return jsonify(results)
 
 
 if __name__ == '__main__':
