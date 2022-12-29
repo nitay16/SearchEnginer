@@ -1,6 +1,6 @@
 from flask import Flask, request, jsonify
 from backend import backend_search, backend_search_body, backend_search_title, backend_search_anchor, \
-    backend_get_pagerank, backend_get_pageview
+    backend_get_pagerank, backend_get_pageview, common_func
 
 
 class MyFlaskApp(Flask):
@@ -10,6 +10,13 @@ class MyFlaskApp(Flask):
 
 app = MyFlaskApp(__name__)
 app.config['JSONIFY_PRETTYPRINT_REGULAR'] = False
+
+
+# Global for indexing
+
+# todo check the names of the bucket and the name of the files
+page_view_dict = common_func.read_pkl_file_form_bucket("pageviews", '')
+page_rank_dict = common_func.read_pkl_file_form_bucket("page_rank", '')
 
 
 @app.route("/search")
@@ -136,7 +143,7 @@ def get_pagerank():
     if len(wiki_ids) == 0:
         app.logger.info("The input was empty")
         return jsonify([])
-    results = backend_get_pagerank.get_pagerank_of_wiki_pages(wiki_ids)
+    results = backend_get_pagerank.get_pagerank_of_wiki_pages(wiki_ids, page_rank_dict)
     app.logger.info("The results of the wiki_ids: " + str(wiki_ids) + " , the results are: " + str(results))
     return jsonify(results)
 
@@ -163,7 +170,7 @@ def get_pageview():
     if len(wiki_ids) == 0:
         app.logger.info("The input was empty")
         return jsonify([])
-    results = backend_get_pageview.get_pagerank_of_wiki_pages(wiki_ids)
+    results = backend_get_pageview.get_pagerank_of_wiki_pages(wiki_ids, page_view_dict)
     app.logger.info("The results of the wiki_ids: " + str(wiki_ids) + " , the results are: " + str(results))
     return jsonify(results)
 
