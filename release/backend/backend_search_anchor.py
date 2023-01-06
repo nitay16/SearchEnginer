@@ -1,7 +1,7 @@
 from common_func import tokenize
 
 
-def get_wiki_tuple_list_of_search_anchor_query(query: str) -> list:
+def get_wiki_tuple_list_of_search_anchor_query(query: str, index_anchor) -> list:
     """
         Func that search the query in the anchors of wiki's pages
     Args:

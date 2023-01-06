@@ -1,6 +1,6 @@
 
 
-def get_pagerank_of_wiki_pages(wiki_ids: list[int], page_rank_dict) -> list:
+def get_pagerank_of_wiki_pages(wiki_ids: list, page_rank_dict) -> list:
     """
         Func that calculate for each wiki id the PageRank score
     Args:
