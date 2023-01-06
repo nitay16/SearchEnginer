@@ -1,7 +1,7 @@
 from common_func import tokenize
 
 
-def get_wiki_tuple_list_of_search_body_query(query: str, n: int=100) -> list:
+def get_wiki_tuple_list_of_search_body_query(query: str, index_body, n: int=100) -> list:
     """
         Func that search the query in the body of wiki's pages
     Args:
