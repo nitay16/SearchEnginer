@@ -42,7 +42,7 @@ def search():
     if len(query) == 0:
         app.logger.info("The input was empty")
         return jsonify([])
-    results = (backend_search.get_wiki_tuple_list_of_search_query(query, 100))
+    results = (backend_search.get_wiki_tuple_list_for_search_query(query, 100))
     app.logger.info("The results of the query: " + query + " , the results are: " + str(results))
     return jsonify(results)
 
@@ -67,7 +67,7 @@ def search_body():
     if len(query) == 0:
         app.logger.info("The input was empty")
         return jsonify([])
-    results = (backend_search_body.get_wiki_tuple_list_of_search_body_query(query, search_body_index, 100))
+    results = (backend_search_body.get_wiki_tuple_list_for_search_body_query(query, search_body_index, 100))
     app.logger.info("The results of the query: " + query + " , the results are: " + str(results))
     return jsonify(results)
 
@@ -93,7 +93,7 @@ def search_title():
     if len(query) == 0:
         app.logger.info("The input was empty")
         return jsonify([])
-    results = backend_search_title.get_wiki_tuple_list_of_search_title_query(query, search_title_index)
+    results = backend_search_title.get_wiki_tuple_list_for_search_title_query(query, search_title_index)
     app.logger.info("The results of the query: " + query + " , the results are: " + str(results))
     return jsonify(results)
 
@@ -120,7 +120,7 @@ def search_anchor():
     if len(query) == 0:
         app.logger.info("The input was empty")
         return jsonify([])
-    results = backend_search_anchor.get_wiki_tuple_list_of_search_anchor_query(query, search_anchor_index)
+    results = backend_search_anchor.get_wiki_tuple_list_for_search_anchor_query(query, search_anchor_index)
     app.logger.info("The results of the query: " + query + " , the results are: " + str(results))
     return jsonify(results)
 
