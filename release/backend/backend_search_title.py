@@ -19,6 +19,7 @@ def get_wiki_tuple_list_for_search_title_query(query: str, index_title) -> list:
             counter_score[(doc_id, index_title.title[doc_id])] += score_tf
     return [key[0] for key in counter_score.most_common()]
 
+# def binary_ranking_title(query,inv_index):
 
 def get_wiki_tuple_list_for_search_title_query_binary_mode(query: str, index_title) -> list:
     """
