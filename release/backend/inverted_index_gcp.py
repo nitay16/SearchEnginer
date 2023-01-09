@@ -117,8 +117,10 @@ class InvertedIndex:
         self.posting_locs = defaultdict(list)
         # add dict for title
         self.title = {}
-        # add Conter for each key: (doc_id , term) -> tf  of each term in doc i
-        self.doc_tf = Counter()
+        # dict for each doc have the len of the doc(not all the inverter index will save this because not needed
+        self.doc_len = Counter()
+        # len of all the doc
+        self.n = 0
 
         for doc_id, tokens in docs.items():
             self.add_doc(doc_id, tokens)
@@ -185,7 +187,7 @@ class InvertedIndex:
         posting_locs = defaultdict(list)
         bucket_id, list_w_pl = b_w_pl
         
-        with closing(MultiFileWriter("../../../../assignment_3/gcp", bucket_id, bucket_name)) as writer:
+        with closing(MultiFileWriter(".", bucket_id, bucket_name)) as writer:
             for w, pl in list_w_pl: 
                 # convert to bytes
                 b = b''.join([(doc_id << 16 | (tf & TF_MASK)).to_bytes(TUPLE_SIZE, 'big')
