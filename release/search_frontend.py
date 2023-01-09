@@ -13,11 +13,11 @@ app.config['JSONIFY_PRETTYPRINT_REGULAR'] = False
 
 
 # Global for indexing
-page_view_index = common_func.read_pkl_file_form_bucket("pageview/pageviews-202108-user", 'bucket_itamar')
-page_rank_index = common_func.read_pkl_file_form_bucket("pagerank/page_rank", 'bucket_itamar')
-search_title_index = common_func.read_pkl_file_form_bucket("postings_gcp/index_title", 'bucket_itamar_title')
-search_body_index = common_func.read_pkl_file_form_bucket("postings_gcp/index_body", 'bucket_itamar_body')
-search_anchor_index = common_func.read_pkl_file_form_bucket("postings_gcp/index_anchor", 'bucket_itamar_anchor')
+page_view_index = common_func.read_pkl_file_form_bucket("pageview/pageviews-202108-user", '206102519_1')
+page_rank_index = common_func.read_pkl_file_form_bucket("pagerank/page_rank", '206102519_1')
+search_title_index = common_func.read_pkl_file_form_bucket("postings_gcp/index_title", 'bucket_nitay_title')
+search_body_index = common_func.read_pkl_file_form_bucket("postings_gcp/index_body", 'bucket_nitay_body')
+search_anchor_index = common_func.read_pkl_file_form_bucket("postings_gcp/index_anchor", 'bucket_nitay_anchor')
 
 
 @app.route("/search")
