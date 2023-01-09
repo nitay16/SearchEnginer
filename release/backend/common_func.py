@@ -46,3 +46,5 @@ def read_posting_list(inverted, w):
       tf = int.from_bytes(b[i*TUPLE_SIZE+4:(i+1)*TUPLE_SIZE], 'big')
       posting_list.append((doc_id, tf))
     return posting_list
+
+

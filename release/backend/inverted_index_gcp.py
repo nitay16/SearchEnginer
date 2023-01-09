@@ -119,8 +119,8 @@ class InvertedIndex:
         self.title = {}
         # add Conter for each key: (doc_id , term) -> tf  of each term in doc i
         self.doc_tf = Counter()
-        self.DL={}
-        self._n=int
+        self.DL = Counter()
+        self._n = 0
 
         for doc_id, tokens in docs.items():
             self.add_doc(doc_id, tokens)
