@@ -15,12 +15,14 @@ from collections import defaultdict
 from contextlib import closing
 
 
+
 # Let's start with a small block size of 30 bytes just to test things out. 
 BLOCK_SIZE = 1999998
 
 
 class MultiFileWriter:
     """ Sequential binary writer to multiple files of up to BLOCK_SIZE each. """
+    # MultiFileWriter(".", bucket_id, bucket_name)
     def __init__(self, base_dir, name, bucket_name):
         self._base_dir = Path(base_dir)
         self._name = name
@@ -64,11 +66,17 @@ class MultiFileReader:
     def __init__(self):
         self._open_files = {}
 
-    def read(self, locs, n_bytes):
+    def read_from_bucket(self, f_name, name_bucket):
+        bucket = storage.Client().get_bucket(name_bucket)
+        blob = bucket.get_blob(f'postings_gcp/{f_name}')
+        return blob.open("rb")
+
+
+    def read(self, bucket_name, locs, n_bytes):
         b = []
         for f_name, offset in locs:
             if f_name not in self._open_files:
-                self._open_files[f_name] = open(f_name, 'rb')
+                self._open_files[f_name] = self.read_from_bucket(f_name, bucket_name)
             f = self._open_files[f_name]
             f.seek(offset)
             n_read = min(n_bytes, BLOCK_SIZE - offset)
