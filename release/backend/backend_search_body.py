@@ -3,8 +3,8 @@ from collections import defaultdict, Counter
 
 import numpy as np
 
-from common_func import tokenize
-from common_func import read_posting_list
+from backend.common_func import tokenize
+from backend.common_func import read_posting_list
 
 def get_wiki_tuple_list_for_search_body_query(query: str, index_body, n: int=100) -> list:
     """
@@ -36,7 +36,7 @@ def cosine_similarity(query: str, index_body)->defaultdict:
     counter_words= Counter(tokens)
     # todo maybe we need to add the name of the bucket
     for term_q in tokens:
-        posting_list_per_term= read_posting_list(index_body,term_q)
+        posting_list_per_term= read_posting_list(index_body,term_q, "bucket_itamar_body")
         for doc_id, freq in posting_list_per_term:
             sim_doc_dictionary[doc_id] += counter_words[term_q]*freq
     for doc in sim_doc_dictionary:
@@ -66,7 +66,7 @@ def bm_25(query:str, index_body, b=0.75, k=0.5)->defaultdict:
         sum+=index_body.doc_len[doc_id]
     avgdl= sum/index_body.n
     for token in tokens:
-        posting_list_per_term = read_posting_list(index_body, token)
+        posting_list_per_term = read_posting_list(index_body, token, "bucket_itamar_body")
         try:
             for doc_id,freq in posting_list_per_term:
                 numerator = dict_idf[token] * freq * (k + 1)

@@ -3,7 +3,8 @@ from contextlib import closing
 import google.cloud.storage as storage
 import re
 from functools import lru_cache
-import inverted_index_gcp
+import backend.inverted_index_gcp
+
 
 # environment vars
 TUPLE_SIZE = 6
@@ -36,10 +37,10 @@ def read_pkl_file_form_bucket(file_name, name_bucket):
           return pickle.load(pkl_file)
 
 
-def read_posting_list(inverted, w):
-  with closing(inverted_index_gcp.MultiFileReader()) as reader:
+def read_posting_list(inverted, w, bucket_name):
+  with closing(backend.inverted_index_gcp.MultiFileReader()) as reader:
     locs = inverted.posting_locs[w]
-    b = reader.read(locs, inverted.df[w] * TUPLE_SIZE)
+    b = reader.read(bucket_name, locs, inverted.df[w] * TUPLE_SIZE)
     posting_list = []
     for i in range(inverted.df[w]):
       doc_id = int.from_bytes(b[i*TUPLE_SIZE:i*TUPLE_SIZE+4], 'big')

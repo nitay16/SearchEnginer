@@ -1,5 +1,5 @@
 from collections import Counter
-from common_func import tokenize, read_posting_list
+from backend.common_func import tokenize, read_posting_list
 
 
 def get_wiki_tuple_list_for_search_anchor_query(query: str, index_anchor) -> list:
@@ -14,7 +14,7 @@ def get_wiki_tuple_list_for_search_anchor_query(query: str, index_anchor) -> lis
     query_list = tokenize(query)
     counter_score = Counter() # -> key[wiki_id] - value = socre -> Counter().most_common() -> [wiki_id_1 , .. ,wiki_id_n]
     for token in query_list:
-        for doc_id, score_tf in read_posting_list(index_anchor, token):
+        for doc_id, score_tf in read_posting_list(index_anchor, token, "bucket_itamar_anchor"):
             counter_score[(doc_id, index_anchor.title[doc_id])] += score_tf
     return [key[0] for key in counter_score.most_common()]
 
@@ -33,6 +33,6 @@ def get_wiki_tuple_list_for_search_anchor_query_binary_mode(query: str, index_an
     counter_score = Counter() # -> key[wiki_id] - value = socre -> Counter().most_common() -> [wiki_id_1 , .. ,wiki_id_n]
     for token in query_list:
             if token in index_anchor.doc_tf:
-                for each_pair in read_posting_list(index_anchor, token):
+                for each_pair in read_posting_list(index_anchor, token, "bucket_itamar_anchor"):
                     counter_score[each_pair[0]] += 1
     return [(key, index_anchor.title) for key in counter_score.most_common()]
