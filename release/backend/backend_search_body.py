@@ -3,10 +3,10 @@ from collections import defaultdict, Counter
 
 import numpy as np
 
-from common_func import tokenize
-from common_func import read_posting_list
+from backend.common_func import tokenize
+from backend.common_func import read_posting_list
 
-def get_wiki_tuple_list_for_search_body_query(query: str, index_body, n: int=100) -> list:
+def get_wiki_tuple_list_for_search_body_query(query: str, index_body,index_title, n: int=100) -> list:
     """
         Func that search the query in the body of wiki's pages
     Args:
@@ -17,51 +17,45 @@ def get_wiki_tuple_list_for_search_body_query(query: str, index_body, n: int=100
         list: list of tuples (wiki_id, wiki_title) , the size of list is n.
     """
     query_list = tokenize(query)
-
-    return []
-
+    return cosine_similarity(query,index_body,index_title)
 
 
-def cosine_similarity(query: str, index_body)->defaultdict:
+
+def cosine_similarity(query: str, index_body,index_title)->list:
     """
-
     Args:
         query: string that represent the query like : "best marvel movie"
         index_body: InverterIndex of index_body
-
     Returns:
          list: list of tuples (wiki_id, sum_score)
-
     """
 #     first we will calculate the similarities of each document and save in a dictionary
-    sim_doc_dictionary=defaultdict(float)
-    tokens= tokenize(query)
-    counter_words= Counter(tokens)
+    sim_doc_dictionary = defaultdict(float)
+    tokens = tokenize(query)
+    counter_words = Counter(tokens)
     # todo maybe we need to add the name of the bucket
     for term_q in tokens:
-        posting_list_per_term= read_posting_list(index_body,term_q)
+        posting_list_per_term = read_posting_list(index_body, term_q, "bucket_itamar_body")
         for doc_id, freq in posting_list_per_term:
-            sim_doc_dictionary[doc_id]+=counter_words[term_q]*freq
-    for doc in sim_doc_dictionary:
-        sim_doc_dictionary[doc]=sim_doc_dictionary[doc]*(1/index_body.doc_len[doc])*(1/len(query))
+            sim_doc_dictionary[(doc_id,index_title.title[doc_id])] += counter_words[term_q]*freq
+    for doc,title in sim_doc_dictionary:
+        sim_doc_dictionary[(doc,title)]=sim_doc_dictionary[(doc,title)]*(1/index_body.doc_len[(doc,title)])*(1/len(query))
 
             # tf= freq/index_body.DL[doc_id]
             # idf= np.log10(index_body._n/index_body.df[term_q])
             # calc_sim= tf*idf
             # sim_doc_dictionary[doc_id]+=calc_sim
-    return sim_doc_dictionary
+    sorted_dictionary= sorted(dict(sim_doc_dictionary).keys(), key=lambda x: sim_doc_dictionary[x], reverse=True)[:100]
+    return sorted_dictionary
 
 
-def bm_25(query:str,index_body,b=0.75,k=0.5)->defaultdict:
+def bm_25(query:str, index_body, b=0.75, k=0.5)->defaultdict:
     """
-
     Args:
         query: string that represent the query like : "best marvel movie"
         index_body: InverterIndex of index_body
-
     Returns:
         dictionary of bm25 scores
-
     """
     tokens = tokenize(query)
     dict_scores= defaultdict(float)
@@ -72,7 +66,7 @@ def bm_25(query:str,index_body,b=0.75,k=0.5)->defaultdict:
         sum+=index_body.doc_len[doc_id]
     avgdl= sum/index_body.n
     for token in tokens:
-        posting_list_per_term = read_posting_list(index_body, token)
+        posting_list_per_term = read_posting_list(index_body, token, "bucket_itamar_body")
         try:
             for doc_id,freq in posting_list_per_term:
                 numerator = dict_idf[token] * freq * (k + 1)
@@ -87,11 +81,9 @@ def bm_25(query:str,index_body,b=0.75,k=0.5)->defaultdict:
 def calc_idf(inverted_body, list_of_tokens):
     """
     This function calculate the idf values according to the BM25 idf formula for each term in the query.
-
     Parameters:
     -----------
     query: list of token representing the query. For example: ['look', 'blue', 'sky']
-
     Returns:
     -----------
     idf: dictionary of idf scores. As follows:
@@ -110,12 +102,10 @@ def calc_idf(inverted_body, list_of_tokens):
 def _score(inverted_body, query, doc_id,avgdl):
     """
     This function calculate the bm25 score for given query and document.
-
     Parameters:
     -----------
     query: list of token representing the query. For example: ['look', 'blue', 'sky']
     doc_id: integer, document id.
-
     Returns:
     -----------
     score: float, bm25 score.
