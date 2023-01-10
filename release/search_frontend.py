@@ -16,8 +16,8 @@ app.config['JSONIFY_PRETTYPRINT_REGULAR'] = False
 # Global for indexing
 # page_view_index = read_pkl_file_form_bucket("pageview/pageviews-202108-user", 'bucket_itamar')
 # page_rank_index = read_pkl_file_form_bucket("pagerank/page_rank", 'bucket_itamar')
-# search_title_index = read_pkl_file_form_bucket("postings_gcp/index_title", 'bucket_itamar_title')
-# search_body_index = read_pkl_file_form_bucket("postings_gcp/index_body", 'bucket_itamar_body')
+search_title_index = read_pkl_file_form_bucket("postings_gcp/index_title", 'bucket_itamar_title')
+search_body_index = read_pkl_file_form_bucket("postings_gcp/index_body", 'bucket_itamar_body')
 search_anchor_index = read_pkl_file_form_bucket("postings_gcp/index_anchor", 'bucket_itamar_anchor')
 
 
@@ -68,7 +68,7 @@ def search_body():
     if len(query) == 0:
         app.logger.info("The input was empty")
         return jsonify([])
-    results = (backend_search_body.get_wiki_tuple_list_for_search_body_query(query, search_body_index, 100))
+    results = (backend_search_body.get_wiki_tuple_list_for_search_body_query(query, search_body_index,search_title_index, 100))
     app.logger.info("The results of the query: " + query + " , the 10 results are: " + str(results[:10]))
     return jsonify(results)
 

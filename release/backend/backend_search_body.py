@@ -6,7 +6,7 @@ import numpy as np
 from backend.common_func import tokenize
 from backend.common_func import read_posting_list
 
-def get_wiki_tuple_list_for_search_body_query(query: str, index_body, n: int=100) -> list:
+def get_wiki_tuple_list_for_search_body_query(query: str, index_body,index_title, n: int=100) -> list:
     """
         Func that search the query in the body of wiki's pages
     Args:
@@ -17,12 +17,11 @@ def get_wiki_tuple_list_for_search_body_query(query: str, index_body, n: int=100
         list: list of tuples (wiki_id, wiki_title) , the size of list is n.
     """
     query_list = tokenize(query)
-
-    return []
-
+    return cosine_similarity(query,index_body,index_title)
 
 
-def cosine_similarity(query: str, index_body)->defaultdict:
+
+def cosine_similarity(query: str, index_body,index_title)->list:
     """
     Args:
         query: string that represent the query like : "best marvel movie"
@@ -32,21 +31,22 @@ def cosine_similarity(query: str, index_body)->defaultdict:
     """
 #     first we will calculate the similarities of each document and save in a dictionary
     sim_doc_dictionary = defaultdict(float)
-    tokens= tokenize(query)
-    counter_words= Counter(tokens)
+    tokens = tokenize(query)
+    counter_words = Counter(tokens)
     # todo maybe we need to add the name of the bucket
     for term_q in tokens:
-        posting_list_per_term= read_posting_list(index_body,term_q, "bucket_itamar_body")
+        posting_list_per_term = read_posting_list(index_body, term_q, "bucket_itamar_body")
         for doc_id, freq in posting_list_per_term:
-            sim_doc_dictionary[doc_id] += counter_words[term_q]*freq
-    for doc in sim_doc_dictionary:
-        sim_doc_dictionary[doc]=sim_doc_dictionary[doc]*(1/index_body.doc_len[doc])*(1/len(query))
+            sim_doc_dictionary[(doc_id,index_title.title[doc_id])] += counter_words[term_q]*freq
+    for doc,title in sim_doc_dictionary:
+        sim_doc_dictionary[(doc,title)]=sim_doc_dictionary[(doc,title)]*(1/index_body.doc_len[(doc,title)])*(1/len(query))
 
             # tf= freq/index_body.DL[doc_id]
             # idf= np.log10(index_body._n/index_body.df[term_q])
             # calc_sim= tf*idf
             # sim_doc_dictionary[doc_id]+=calc_sim
-    return sim_doc_dictionary
+    sorted_dictionary= sorted(dict(sim_doc_dictionary).keys(), key=lambda x: sim_doc_dictionary[x], reverse=True)[:100]
+    return sorted_dictionary
 
 
 def bm_25(query:str, index_body, b=0.75, k=0.5)->defaultdict:
