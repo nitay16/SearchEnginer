@@ -15,14 +15,12 @@ from collections import defaultdict
 from contextlib import closing
 
 
-
 # Let's start with a small block size of 30 bytes just to test things out. 
 BLOCK_SIZE = 1999998
 
 
 class MultiFileWriter:
     """ Sequential binary writer to multiple files of up to BLOCK_SIZE each. """
-    # MultiFileWriter(".", bucket_id, bucket_name)
     def __init__(self, base_dir, name, bucket_name):
         self._base_dir = Path(base_dir)
         self._name = name
@@ -66,17 +64,11 @@ class MultiFileReader:
     def __init__(self):
         self._open_files = {}
 
-    def read_from_bucket(self, f_name, name_bucket):
-        bucket = storage.Client().get_bucket(name_bucket)
-        blob = bucket.get_blob(f'postings_gcp/{f_name}')
-        return blob.open("rb")
-
-
-    def read(self, bucket_name, locs, n_bytes):
+    def read(self, locs, n_bytes):
         b = []
         for f_name, offset in locs:
             if f_name not in self._open_files:
-                self._open_files[f_name] = self.read_from_bucket(f_name, bucket_name)
+                self._open_files[f_name] = open(f_name, 'rb')
             f = self._open_files[f_name]
             f.seek(offset)
             n_read = min(n_bytes, BLOCK_SIZE - offset)
@@ -125,10 +117,10 @@ class InvertedIndex:
         self.posting_locs = defaultdict(list)
         # add dict for title
         self.title = {}
-        # dict for each doc have the len of the doc(not all the inverter index will save this because not needed
-        self.doc_len = Counter()
-        # len of all the doc
-        self.n = 0
+        # add Conter for each key: (doc_id , term) -> tf  of each term in doc i
+        self.doc_tf = Counter()
+        self.DL = Counter()
+        self._n = 0
 
         for doc_id, tokens in docs.items():
             self.add_doc(doc_id, tokens)
@@ -195,7 +187,7 @@ class InvertedIndex:
         posting_locs = defaultdict(list)
         bucket_id, list_w_pl = b_w_pl
         
-        with closing(MultiFileWriter(".", bucket_id, bucket_name)) as writer:
+        with closing(MultiFileWriter("../../../../assignment_3/gcp", bucket_id, bucket_name)) as writer:
             for w, pl in list_w_pl: 
                 # convert to bytes
                 b = b''.join([(doc_id << 16 | (tf & TF_MASK)).to_bytes(TUPLE_SIZE, 'big')
