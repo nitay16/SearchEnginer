@@ -2,6 +2,8 @@ from flask import Flask, request, jsonify
 from backend import backend_search, backend_search_body, backend_search_title, backend_search_anchor, \
     backend_get_pagerank, backend_get_pageview
 from backend.common_func import read_pkl_file_form_bucket
+import numpy as np
+from collections import Counter, defaultdict
 
 
 class MyFlaskApp(Flask):
@@ -12,14 +14,23 @@ class MyFlaskApp(Flask):
 app = MyFlaskApp(__name__)
 app.config['JSONIFY_PRETTYPRINT_REGULAR'] = False
 
-
 # Global for indexing
-# page_view_index = read_pkl_file_form_bucket("pageview/pageviews-202108-user", 'bucket_itamar')
-# page_rank_index = read_pkl_file_form_bucket("pagerank/page_rank", 'bucket_itamar')
-# search_title_index = read_pkl_file_form_bucket("postings_gcp/index_title", 'bucket_itamar_title')
-# search_body_index = read_pkl_file_form_bucket("postings_gcp/index_body", 'bucket_itamar_body')
+page_view_index = read_pkl_file_form_bucket("pageview/pageviews-202108-user", 'bucket_itamar')
+page_rank_index = read_pkl_file_form_bucket("pagerank/page_rank", 'bucket_itamar')
+search_title_index = read_pkl_file_form_bucket("postings_gcp/index_title", 'bucket_itamar_title')
+search_body_index = read_pkl_file_form_bucket("postings_gcp/index_body", 'bucket_itamar_body')
+search_body_index.doc_len = read_pkl_file_form_bucket("dict_help/doc_len", 'bucket_itamar_body')
 search_anchor_index = read_pkl_file_form_bucket("postings_gcp/index_anchor", 'bucket_itamar_anchor')
+avgdl = np.sum(list(search_body_index.doc_len.values())) / len(list(search_body_index.doc_len.values()))
+search_body_index.idf_norm = read_pkl_file_form_bucket("dict_help/dict_norm_list", 'bucket_itamar_body')
 
+# union of dictionaries
+dic_union_norm=defaultdict(float)
+for i in search_body_index.idf_norm:
+    for key in i:
+        dic_union_norm[key]=i[key][1]
+
+search_body_index.idf_norm = dic_union_norm
 
 @app.route("/search")
 def search():
@@ -43,7 +54,8 @@ def search():
     if len(query) == 0:
         app.logger.info("The input was empty")
         return jsonify([])
-    results = (backend_search.get_wiki_tuple_list_for_search_query(query, 100))
+    results = (backend_search.get_wiki_tuple_list_for_search_query(query, search_body_index, search_title_index,
+                                                                   search_anchor_index, page_rank_index, avgdl, 100))
     app.logger.info("The results of the query: " + query + " , the 10 results are: " + str(results[:10]))
     return jsonify(results)
 
@@ -68,7 +80,7 @@ def search_body():
     if len(query) == 0:
         app.logger.info("The input was empty")
         return jsonify([])
-    results = (backend_search_body.get_wiki_tuple_list_for_search_body_query(query, search_body_index, 100))
+    results = (backend_search_body.get_wiki_tuple_list_for_search_body_query(query, search_body_index, search_title_index, 100))
     app.logger.info("The results of the query: " + query + " , the 10 results are: " + str(results[:10]))
     return jsonify(results)
 

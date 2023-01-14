@@ -7,6 +7,8 @@ import backend.inverted_index_gcp
 
 
 # environment vars
+from nltk.corpus import stopwords
+
 TUPLE_SIZE = 6
 
 
@@ -16,7 +18,14 @@ def re_word():
 
 
 def tokenize(text):
-    return [token.group() for token in re_word().finditer(text.lower())]
+    english_stopwords = frozenset(stopwords.words('english'))
+    corpus_stopwords = ["category", "references", "also", "external", "links",
+                        "may", "first", "see", "history", "people", "one", "two",
+                        "part", "thumb", "including", "second", "following",
+                        "many", "however", "would", "became"]
+
+    all_stopwords = english_stopwords.union(corpus_stopwords)
+    return [term_token for term_token in [token.group() for token in re_word().finditer(text.lower())] if term_token not in all_stopwords]
 
 
 def read_pkl_file_form_bucket(file_name, name_bucket):
@@ -38,12 +47,15 @@ def read_pkl_file_form_bucket(file_name, name_bucket):
 
 
 def read_posting_list(inverted, w, bucket_name):
-  with closing(backend.inverted_index_gcp.MultiFileReader()) as reader:
-    locs = inverted.posting_locs[w]
-    b = reader.read(bucket_name, locs, inverted.df[w] * TUPLE_SIZE)
-    posting_list = []
-    for i in range(inverted.df[w]):
-      doc_id = int.from_bytes(b[i*TUPLE_SIZE:i*TUPLE_SIZE+4], 'big')
-      tf = int.from_bytes(b[i*TUPLE_SIZE+4:(i+1)*TUPLE_SIZE], 'big')
-      posting_list.append((doc_id, tf))
-    return posting_list
+    try:
+      with closing(backend.inverted_index_gcp.MultiFileReader()) as reader:
+        locs = inverted.posting_locs[w]
+        b = reader.read(bucket_name, locs, inverted.df[w] * TUPLE_SIZE)
+        posting_list = []
+        for i in range(inverted.df[w]):
+          doc_id = int.from_bytes(b[i*TUPLE_SIZE:i*TUPLE_SIZE+4], 'big')
+          tf = int.from_bytes(b[i*TUPLE_SIZE+4:(i+1)*TUPLE_SIZE], 'big')
+          posting_list.append((doc_id, tf))
+        return posting_list
+    except:
+        return []
