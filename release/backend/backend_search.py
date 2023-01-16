@@ -1,18 +1,15 @@
 import math
 from collections import Counter, defaultdict
 
-import spacy
-from backend.common_func import tokenize, read_posting_list
-import backend.backend_search_body, backend.backend_search_title, backend.backend_get_pageview, backend.backend_get_pagerank
-import concurrent.futures
-
+from backend.common_func import tokenize , read_posting_list
+from backend.backend_search_title import get_wiki_tuple_list_for_search_title_query_binary_mode
 
 
 def get_dict_of_tf_per_term(terms, search_body_index):
     dict_return = Counter()
     for term in terms:
         if term in search_body_index.df:
-            for doc_id, score_tf in read_posting_list(search_body_index, term, "bucket_itamar_body"):
+            for doc_id, score_tf in read_posting_list(search_body_index, term, "fishing-engine-search-body"):
                 dict_return.setdefault(doc_id, {})[term] = score_tf
     return dict_return
 
@@ -24,7 +21,7 @@ def get_query_tf_per_term(query):
     k3 = 0.5
     vals = {}
     for term in dict_return:
-        vals[term] = ((k3 + 1)*dict_return[term])/(k3 + dict_return[term])
+        vals[term] = ((k3 + 1) * dict_return[term]) / (k3 + dict_return[term])
     return dict_return
 
 
@@ -42,7 +39,7 @@ def get_BM_25_resutls_Counter(terms, avgdl, search_body_index):
     docs = list(relevent_doc_and_tf.keys())
     dict_return = Counter()
     b = 0.75
-    k1 = 0.5
+    k1 = 1
     for doc in docs:
         score = 0.0
         B = (1 - b + (b * (search_body_index.doc_len[doc] / avgdl)))
@@ -52,15 +49,16 @@ def get_BM_25_resutls_Counter(terms, avgdl, search_body_index):
             section_2 = 1
             if term in relevent_doc_and_tf[doc]:
                 tf_origin = relevent_doc_and_tf[doc][term]
-                section_1 = ((k1+1)*tf_origin)/((B*k1)+tf_origin)
+                section_1 = ((k1 + 1) * tf_origin) / ((B * k1) + tf_origin)
                 section_2 = calc_idf(term, search_body_index)
             section_3 = query_k3_section_val[term]
-            score += section_1*section_2*section_3
+            score += section_1 * section_2 * section_3
+
         dict_return[doc] = score
     return dict_return.most_common(100)
 
 
-def cosine_similarity(query: str, index_body,index_title)->list:
+def cosine_similarity(query: str, index_body) -> list:
     """
 
     Args:
@@ -71,52 +69,68 @@ def cosine_similarity(query: str, index_body,index_title)->list:
          list: list of tuples (wiki_id, sum_score)
 
     """
-#     first we will calculate the similarities of each document and save in a dictionary
+    #     first we will calculate the similarities of each document and save in a dictionary
     sim_doc_dictionary = defaultdict(float)
     list_of_tokens = query
-    counter_terms_q=Counter()
+    counter_terms_q = Counter()
     for i in list_of_tokens:
-      counter_terms_q[i]+=1
-    q_len= len(list_of_tokens)
-    dict_tf_idf_query=defaultdict(float)
+        counter_terms_q[i] += 1
+    q_len = len(list_of_tokens)
+    dict_tf_idf_query = defaultdict(float)
     for term in list_of_tokens:
-      try:
-        tf_q = counter_terms_q[term]/q_len
-        idf = math.log10(index_body.n/index_body.df[term])
-        tf_idf_query = tf_q*idf
-        dict_tf_idf_query[term] = tf_idf_query
-      except:
-        continue
+        try:
+            tf_q = counter_terms_q[term] / q_len
+            idf = math.log10(index_body.n / index_body.df[term])
+            tf_idf_query = tf_q * idf
+            dict_tf_idf_query[term] = tf_idf_query
+        except:
+            continue
     squer_idf_query = 0
     for term in dict_tf_idf_query:
-       squer_idf_query += (dict_tf_idf_query[term])**2
+        squer_idf_query += (dict_tf_idf_query[term]) ** 2
     norm_fator_query = math.sqrt(squer_idf_query)
     for term_q in list_of_tokens:
-        posting_list_per_term = read_posting_list(index_body, term_q, "bucket_itamar_body")
+        posting_list_per_term = read_posting_list(index_body, term_q, "fishing-engine-search-body")
         for doc_id, freq in posting_list_per_term:
             try:
-                tf = freq/index_body.doc_len[doc_id]
-                tf_q = counter_terms_q[term_q]/q_len
-                idf = math.log10(index_body.n/index_body.df[term_q])
-                tf_idf_doc= tf*idf
-                tf_idf_que=tf_q*idf
-                sim_doc_dictionary[doc_id] += tf_idf_que*tf_idf_doc
+                tf = freq / index_body.doc_len[doc_id]
+                tf_q = counter_terms_q[term_q] / q_len
+                idf = math.log10(index_body.n / index_body.df[term_q])
+                tf_idf_doc = tf * idf
+                tf_idf_que = tf_q * idf
+                sim_doc_dictionary[doc_id] += tf_idf_que * tf_idf_doc
             except ZeroDivisionError:
                 continue
     for doc in sim_doc_dictionary:
         if (doc in index_body.idf_norm):
             normalize_num = index_body.idf_norm[doc]
-
             try:
-                sim_doc_dictionary[doc] = sim_doc_dictionary[doc]*(1/norm_fator_query)*(1/normalize_num)
+                sim_doc_dictionary[doc] = sim_doc_dictionary[doc] * (1 / norm_fator_query) * (1 / normalize_num)
             except ZeroDivisionError:
                 continue
     sorted_dictionary = sorted(dict(sim_doc_dictionary).items(), key=lambda x: x[1], reverse=True)[:100]
     return sorted_dictionary
 
 
+def merge_results(title_scores, body_scores, title_weight=0.5, text_weight=0.5, N=100):
+    dict_top_n = {}
+    query_id = "query_id"
+    scores = {}
+    # if query_id in title_scores and query_id in body_scores:
+    for doc, score in title_scores[query_id]:
+        scores[doc] = title_weight * score
+    for doc, score in body_scores[query_id]:
+        if doc in scores:
+            scores[doc] += (text_weight * score)
+        else:
+            scores[doc] = text_weight * score
+    dict_top_n[query_id] = sorted([(doc_id, score) for doc_id, score in scores.items()], key=lambda x: x[1],
+                                  reverse=True)[:N]
 
-def get_wiki_tuple_list_for_search_query(query: str, index_body, index_title, index_anchor, page_rank, avgdl, n=100) -> list:
+    return dict_top_n
+
+
+def get_wiki_tuple_list_for_search_query(query: str, index_body, index_title, index_anchor, page_rank, avgdl,n=100) -> list:
     """
     # todo add the method that we used in the func
         Func that search in _______
@@ -131,49 +145,29 @@ def get_wiki_tuple_list_for_search_query(query: str, index_body, index_title, in
     Returns:
         list: list of tuples (wiki_id, wiki_title) , the size of list is n.
     """
-    query_list = tokenize(query)
+    terms = tokenize(query)
+    # if the query after tokenze is len one then we want more weight to the title serach
+    if len(terms) == 1:
+        w1 = 0.9
+        w2 = 0.1
+        binary_title = get_wiki_tuple_list_for_search_title_query_binary_mode(query, index_title)
+        max_val_title = binary_title[0][1]
+        binary_title = [(pair[0], pair[1] / max_val_title) for pair in binary_title]
+        binary_title_dict = {"query_id": binary_title}
+        cosim_body = cosine_similarity(terms, index_body)
+        cosim_body_dict = {"query_id": cosim_body}
+        merge = merge_results(binary_title_dict, cosim_body_dict, w1, w2)
+        return [(pair[0], index_title.title[pair[0]]) for pair in merge["query_id"]][:20]
 
-    title = backend.backend_search_title.get_wiki_tuple_list_for_search_title_query_binary_mode(query, index_title)
-    bm25 = get_BM_25_resutls_Counter(query_list, avgdl, index_body)
-    cossim = cosine_similarity(query_list, index_body, index_title)
-
-    functions = [title, bm25, cossim]
-    # run in parallel
-    with concurrent.futures.ThreadPoolExecutor() as executor:
-        results = [executor.submit(fn) for fn in functions]
-        concurrent.futures.wait(results)
-
-    doc_form_cossim = [pair[0] for pair in cossim]
-    doc_from_title = [pair[0][0] for pair in title[:100]]
-    doc_from_bm25 = [pair[0] for pair in bm25]
-
-
-    predict = []
-    count_bm25 = 0
-    count_cos = 0
-    count_title = 0
-    max_w = False
-    while (len(predict)) < 100 and not max_w:
-        max_w = True
-        for i in range(4):
-            if len(doc_from_bm25) > count_bm25:
-                max_w = False
-                if doc_from_bm25[count_bm25] not in predict:
-                    predict.append(doc_from_bm25[count_bm25])
-            count_bm25 += 1
-        for i in range(4):
-            if len(doc_form_cossim) > count_cos:
-                max_w = False
-                if doc_form_cossim[count_cos] not in predict:
-                    predict.append(doc_form_cossim[count_cos])
-            count_cos += 1
-        for i in range(2):
-            if len(doc_from_title) > count_title:
-                max_w = False
-                if doc_from_title[count_title] not in predict:
-                    predict.append(doc_from_title[count_title])
-            count_title += 1
-
-    return [(i, index_title.title[i]) for i in predict[:100]]
-
+    if len(terms) >= 2:
+        w1 = 0.3
+        w2 = 0.7
+        binary_title = get_wiki_tuple_list_for_search_title_query_binary_mode(query, index_title)
+        max_val_title = binary_title[0][1]
+        binary_title = [(pair[0], pair[1] / max_val_title) for pair in binary_title]
+        cosim_body = cosine_similarity(terms, index_body)
+        binary_title_dict = {"query_id": binary_title}
+        cosim_body_dict = {"query_id": cosim_body}
+        merge = merge_results(binary_title_dict, cosim_body_dict, w1, w2)
+        return [(pair[0], index_title.title[pair[0]]) for pair in merge["query_id"]][:20]
 

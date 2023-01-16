@@ -167,15 +167,28 @@ class InvertedIndex:
         """ A generator that reads one posting list from disk and yields 
             a (word:str, [(doc_id:int, tf:int), ...]) tuple.
         """
-        with closing(MultiFileReader()) as reader:
-            for w, locs in self.posting_locs.items():
-                b = reader.read(locs[0], self.df[w] * TUPLE_SIZE)
-                posting_list = []
-                for i in range(self.df[w]):
-                    doc_id = int.from_bytes(b[i*TUPLE_SIZE:i*TUPLE_SIZE+4], 'big')
-                    tf = int.from_bytes(b[i*TUPLE_SIZE+4:(i+1)*TUPLE_SIZE], 'big')
-                    posting_list.append((doc_id, tf))
-                yield w, posting_list
+        amount = len(self.posting_locs.keys())
+        saved = []
+        start = 0
+        while(len(saved) < amount):
+            with closing(MultiFileReader()) as reader:
+                loop = 0
+                for w, locs in self.posting_locs.items():
+                    if loop == 500:
+                        loop = 0
+                        break
+                    loop += 1
+                    if w not in saved:
+                        saved.append(w)
+                        b = reader.read("fishing-engine-search-body", [locs[0]], self.df[w] * TUPLE_SIZE)
+                        posting_list = []
+                        for i in range(self.df[w]):
+                            doc_id = int.from_bytes(b[i*TUPLE_SIZE:i*TUPLE_SIZE+4], 'big')
+                            tf = int.from_bytes(b[i*TUPLE_SIZE+4:(i+1)*TUPLE_SIZE], 'big')
+                            posting_list.append((doc_id, tf))
+                        yield w, posting_list
+
+
 
     @staticmethod
     def read_index(base_dir, name):

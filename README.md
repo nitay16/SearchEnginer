@@ -1,5 +1,6 @@
 # <h1 style="color:#AED6F1">SearchEngine - FishingEngineSearch</h1>
 <p style="font-size:16px">Welcome to FishingEngineSearch, a powerful and easy-to-use search engine that helps you find the information you need quickly and easily. Whether you're looking for wiki page, FishingEngineSearch has you covered.
+We using Binary and Cos Similarly algorithms
 </p>
 <img alt="img.png" height="300" src="image_for_readme.png" width="200"/>
 

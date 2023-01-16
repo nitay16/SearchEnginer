@@ -14,7 +14,7 @@ def get_wiki_tuple_list_for_search_anchor_query(query: str, index_anchor) -> lis
     query_list = tokenize(query)
     counter_score = Counter() # -> key[wiki_id] - value = socre -> Counter().most_common() -> [wiki_id_1 , .. ,wiki_id_n]
     for token in query_list:
-        for doc_id, score_tf in read_posting_list(index_anchor, token, "bucket_itamar_anchor"):
+        for doc_id, score_tf in read_posting_list(index_anchor, token, 'fishing-engine-search-anchor'):
             counter_score[(doc_id, index_anchor.title[doc_id])] += score_tf
     return [key[0] for key in counter_score.most_common()]
 
@@ -27,12 +27,12 @@ def get_wiki_tuple_list_for_search_anchor_query_binary_mode(query: str, index_an
         index_anchor:InverterIndex of the anchor
 
     Returns:
-        list: list of tuples (wiki_id, wiki_title)
+        list: list of tuples (wiki_id, score)
     """
     query_list = tokenize(query)
     counter_score = Counter() # -> key[wiki_id] - value = socre -> Counter().most_common() -> [wiki_id_1 , .. ,wiki_id_n]
     for token in query_list:
             if token in index_anchor.df:
-                for each_pair in read_posting_list(index_anchor, token, "bucket_itamar_anchor"):
+                for each_pair in read_posting_list(index_anchor, token, 'fishing-engine-search-anchor'):
                     counter_score[each_pair[0]] += 1
-    return [(key, index_anchor.title) for key in counter_score.most_common()]
+    return counter_score.most_common(100)
