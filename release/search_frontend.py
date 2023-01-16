@@ -15,14 +15,14 @@ app = MyFlaskApp(__name__)
 app.config['JSONIFY_PRETTYPRINT_REGULAR'] = False
 
 # Global for indexing
-page_view_index = read_pkl_file_form_bucket("pageview/pageviews-202108-user", 'bucket_itamar')
-page_rank_index = read_pkl_file_form_bucket("pagerank/page_rank", 'bucket_itamar')
-search_title_index = read_pkl_file_form_bucket("postings_gcp/index_title", 'bucket_itamar_title')
-search_body_index = read_pkl_file_form_bucket("postings_gcp/index_body", 'bucket_itamar_body')
-search_body_index.doc_len = read_pkl_file_form_bucket("dict_help/doc_len", 'bucket_itamar_body')
-search_anchor_index = read_pkl_file_form_bucket("postings_gcp/index_anchor", 'bucket_itamar_anchor')
+page_view_index = read_pkl_file_form_bucket("pageview/pageviews-202108-user", 'fishing-engine-search-body')
+page_rank_index = read_pkl_file_form_bucket("pagerank/page_rank", 'fishing-engine-search-body')
+search_title_index = read_pkl_file_form_bucket("postings_gcp/index_title", 'fishing-engine-search-title')
+search_body_index = read_pkl_file_form_bucket("postings_gcp/index_body", 'fishing-engine-search-body')
+search_body_index.doc_len = read_pkl_file_form_bucket("dict_help/doc_len", 'fishing-engine-search-body')
+search_anchor_index = read_pkl_file_form_bucket("postings_gcp/index_anchor", 'fishing-engine-search-anchor')
 avgdl = np.sum(list(search_body_index.doc_len.values())) / len(list(search_body_index.doc_len.values()))
-search_body_index.idf_norm = read_pkl_file_form_bucket("dict_help/dict_norm_list", 'bucket_itamar_body')
+search_body_index.idf_norm = read_pkl_file_form_bucket("dict_help/dict_norm_list", 'fishing-engine-search-body')
 
 # union of dictionaries
 dic_union_norm=defaultdict(float)
@@ -31,6 +31,7 @@ for i in search_body_index.idf_norm:
         dic_union_norm[key]=i[key][1]
 
 search_body_index.idf_norm = dic_union_norm
+
 
 @app.route("/search")
 def search():

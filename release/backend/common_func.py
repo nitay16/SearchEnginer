@@ -8,6 +8,8 @@ import backend.inverted_index_gcp
 
 # environment vars
 from nltk.corpus import stopwords
+import nltk
+nltk.download('stopwords')
 
 TUPLE_SIZE = 6
 

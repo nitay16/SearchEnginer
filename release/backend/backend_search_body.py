@@ -1,8 +1,6 @@
 import math
 from collections import defaultdict, Counter
 
-import numpy as np
-
 from backend.common_func import tokenize
 from backend.common_func import read_posting_list
 
@@ -39,7 +37,7 @@ def get_wiki_tuple_list_for_search_body_query(query: str, index_body,index_title
         squer_idf_query += (dict_tf_idf_query[term]) ** 2
     norm_fator_query = math.sqrt(squer_idf_query)
     for term_q in list_of_tokens:
-        posting_list_per_term = read_posting_list(index_body, term_q, "bucket_itamar_body")
+        posting_list_per_term = read_posting_list(index_body, term_q, 'fishing-engine-search-body')
         for doc_id, freq in posting_list_per_term:
             try:
                 tf = freq / index_body.doc_len[doc_id]
